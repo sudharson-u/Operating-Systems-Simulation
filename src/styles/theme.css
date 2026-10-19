@@ -1,0 +1,101 @@
+/* Fonts imports via @fontsource */
+@import '@fontsource/familjen-grotesk/500.css';
+@import '@fontsource/familjen-grotesk/700.css';
+@import '@fontsource/wix-madefor-text/400.css';
+@import '@fontsource/wix-madefor-text/600.css';
+@import '@fontsource/wix-madefor-text/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+:root {
+  /* Deck Color Tokens */
+  --bg-deep: #0F2229;
+  --navy: #0E3A52;
+  --teal: #33555B;
+  --teal-dark: #1A363B;
+  --teal-light: #4A7A82;
+  --mint: #E3FDF9;
+  --mint-faint: rgba(227, 253, 249, 0.08);
+  --coral: #E8664A;
+  --coral-glow: rgba(232, 102, 74, 0.35);
+  --ink: #272525;
+  --ok: #2FBF71;
+  --ok-glow: rgba(47, 191, 113, 0.35);
+  --danger: #E5484D;
+  --danger-glow: rgba(229, 72, 77, 0.45);
+  --box: #F2C230;
+  --box-glow: rgba(242, 194, 48, 0.3);
+
+  /* Vehicle Identity Colors (Colorblind-Safe) */
+  --veh-a: #4DA3FF;
+  --veh-b: #B28CFF;
+  --veh-c: #F59E4B;
+  --veh-d: #5EE0D0;
+
+  /* Typography */
+  --font-heading: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Wix Madefor Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* Elevation & Borders */
+  --border-subtle: 1px solid rgba(51, 85, 91, 0.6);
+  --border-active: 1px solid var(--coral);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px var(--coral-glow);
+
+  /* Transitions */
+  --trans-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --trans-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: var(--mint);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--teal);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-light);
+}

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRIDLOCK LAB — Interactive Traffic Deadlock Simulation (BACSE106)</title>
+  <link rel="stylesheet" href="./src/styles/theme.css">
+  <link rel="stylesheet" href="./src/styles/layout.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- TOP SLENDER GLASS BAR -->
+    <header class="top-nav">
+
+
+      <!-- SCENARIOS SEGMENTED PILLS CAROUSEL -->
+      <nav class="scenario-selector" id="scenarios-carousel">
+        <!-- Populated via script: Scenario 1 to 8 pills -->
+      </nav>
+
+      <!-- TOP ACTIONS -->
+      <div class="nav-actions">
+        <button id="btn-inspector-toggle" class="nav-btn active" title="Toggle OS Inspector Drawer (Key I)">
+          <span class="icon">📊</span>
+          <span>Inspector</span>
+        </button>
+        <button id="btn-sound" class="nav-btn" title="Toggle Sound">
+          <span id="sound-icon">🔇</span>
+        </button>
+        <button id="btn-presenter" class="nav-btn" title="Presenter Mode (Key H)">
+          <span>🎯</span>
+        </button>
+        <button id="btn-fullscreen" class="nav-btn" title="Fullscreen (Key F)">
+          <span>⛶</span>
+        </button>
+        <button id="btn-conclusion-top" class="nav-btn" title="Summary & References (Key 0)">
+          <span>🏁</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWPORT (STAGE IS THE HERO) -->
+    <main class="main-viewport" id="main-viewport">
+      <!-- CANVAS STAGE CONTAINER -->
+      <div class="stage-wrapper" id="stage-wrapper">
+        <canvas id="stage-canvas"></canvas>
+
+        <!-- 2x2 COMPARISON THEATER (Scenario 8) -->
+        <div id="comp-grid" class="comp-grid-container">
+          <div class="comp-card">
+            <div class="comp-header">
+              <span class="comp-tag mode-1">1. UNCONTROLLED</span>
+              <span class="comp-hud" id="hud-uncontrolled">Deadlocks: 0 | Passed: 0</span>
+            </div>
+            <canvas id="canvas-comp-uncontrolled"></canvas>
+          </div>
+          <div class="comp-card">
+            <div class="comp-header">
+              <span class="comp-tag mode-2">2. FIXED SIGNAL</span>
+              <span class="comp-hud" id="hud-signal">Deadlocks: 0 | Passed: 0</span>
+            </div>
+            <canvas id="canvas-comp-signal"></canvas>
+          </div>
+          <div class="comp-card">
+            <div class="comp-header">
+              <span class="comp-tag mode-3">3. ROUNDABOUT</span>
+              <span class="comp-hud" id="hud-roundabout">Deadlocks: 0 | Passed: 0</span>
+            </div>
+            <canvas id="canvas-comp-roundabout"></canvas>
+          </div>
+          <div class="comp-card">
+            <div class="comp-header">
+              <span class="comp-tag mode-4">4. PROPOSED CONTROLLER</span>
+              <span class="comp-hud" id="hud-proposed">Deadlocks: 0 | Passed: 0</span>
+            </div>
+            <canvas id="canvas-comp-proposed"></canvas>
+          </div>
+        </div>
+
+        <!-- FLOATING OVERLAY: TOP-LEFT CYCLE & RAG MONITOR -->
+        <div class="floating-island top-left" id="rag-island">
+          <div class="island-header">
+            <div class="status-indicator" id="rag-status-dot"></div>
+            <span class="island-title" id="rag-island-label">DEPENDENCY GRAPH</span>
+          </div>
+          <div class="cycle-pill" id="cycle-pill-banner">
+            <span class="cycle-state" id="cycle-state-text">NO CYCLE · FLOW STABLE</span>
+          </div>
+        </div>
+
+        <!-- FLOATING OVERLAY: TOP-RIGHT "BREAK A CONDITION" LAB -->
+        <div class="floating-island top-right" id="coffman-island">
+          <div class="island-header">
+            <span class="island-title">COFFMAN CONDITIONS MATRIX</span>
+            <div class="coffman-badge ok" id="coffman-status-badge">DEADLOCK IMPOSSIBLE</div>
+          </div>
+          <div class="toggles-grid">
+            <button class="pill-toggle" id="btn-toggle-flyover" title="Break Mutual Exclusion via Grade-Separation (Flyover)">
+              <span class="pill-icon">✈️</span>
+              <span class="pill-name">Flyover</span>
+              <span class="pill-status" id="st-flyover">OFF</span>
+            </button>
+            <button class="pill-toggle" id="btn-toggle-exit-clear" title="Break Hold & Wait via Yellow-Box Reservation">
+              <span class="pill-icon">🛑</span>
+              <span class="pill-name">Exit-Clear</span>
+              <span class="pill-status" id="st-exit-clear">OFF</span>
+            </button>
+            <button class="pill-toggle" id="btn-toggle-police" title="Break No-Preemption via Police Recovery Rollback">
+              <span class="pill-icon">👮</span>
+              <span class="pill-name">Police Rollback</span>
+              <span class="pill-status" id="st-police">OFF</span>
+            </button>
+            <button class="pill-toggle" id="btn-toggle-ordered" title="Break Circular Wait via Ordered Global Resource Entry">
+              <span class="pill-icon">🔄</span>
+              <span class="pill-name">Ordered Entry</span>
+              <span class="pill-status" id="st-ordered">OFF</span>
+            </button>
+          </div>
+          <div class="quick-fault-row">
+            <button class="btn-fault" id="btn-toggle-blockage" title="Toggle Downstream Exit Blockage (Spillback)">
+              🚧 Toggle South Exit Blockage (B)
+            </button>
+            <button class="btn-fault alert" id="btn-inject-stall" title="Force Stall Vehicle Inside Box">
+              ⚠️ Stall Vehicle
+            </button>
+          </div>
+        </div>
+
+        <!-- FLOATING OVERLAY: 5-STEP RECOVERY PROGRESS -->
+        <div class="recovery-toast" id="recovery-stepper">
+          <div class="toast-title">RECOVERY SEQUENCE (SLIDE 7)</div>
+          <div class="toast-steps">
+            <span class="step-chip" id="step-detect">1. Detect</span>
+            <span class="step-arrow">›</span>
+            <span class="step-chip" id="step-stop">2. Stop</span>
+            <span class="step-arrow">›</span>
+            <span class="step-chip" id="step-control">3. Police Control</span>
+            <span class="step-arrow">›</span>
+            <span class="step-chip" id="step-clear">4. Clear & Reroute</span>
+            <span class="step-arrow">›</span>
+            <span class="step-chip" id="step-restore">5. Restore</span>
+          </div>
+        </div>
+
+        <!-- FLOATING CINEMATIC BOTTOM DOCK -->
+        <div class="floating-dock">
+          <!-- PRIMARY CONTROLS -->
+          <div class="dock-transport">
+            <button id="btn-reset" class="dock-btn" title="Reset Scenario (R)">
+              <span>⏮</span>
+            </button>
+            <button id="btn-play-pause" class="dock-btn primary" title="Play / Pause (Space)">
+              <span id="play-pause-icon">▶</span>
+            </button>
+            <button id="btn-step" class="dock-btn" title="Step One Frame (→)">
+              <span>⏭</span>
+            </button>
+            <button id="btn-spawn-four" class="dock-btn accent" title="Spawn 4 Simultaneous Vehicles (D)">
+              <span>⚡ Spawn 4</span>
+            </button>
+          </div>
+
+          <!-- NARRATION HERO CAPSULE -->
+          <div class="dock-narration">
+            <div class="narration-meta">
+              <span class="narration-tag" id="caption-slide-tag">SLIDE 2–3: THE FAILURE</span>
+              <span class="narration-clock" id="sim-time-display">00:00.0</span>
+            </div>
+            <div class="narration-content" id="caption-text">
+              Loading simulation state...
+            </div>
+          </div>
+
+          <!-- PLAYBACK SETTINGS -->
+          <div class="dock-playback">
+            <div class="speed-pill-group">
+              <button class="speed-btn" data-speed="0.5">0.5x</button>
+              <button class="speed-btn active" data-speed="1.0">1x</button>
+              <button class="speed-btn" data-speed="2.0">2x</button>
+            </div>
+            <div class="seed-capsule">
+              <span>Seed</span>
+              <input type="number" id="input-seed" value="42">
+              <button id="btn-random-seed" title="Randomize Seed">🎲</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE-OUT OS INSPECTOR DRAWER (Collapsible on the right) -->
+      <aside class="inspector-drawer" id="inspector-drawer">
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <span>OS THEORY INSPECTOR</span>
+          </div>
+          <button id="btn-close-drawer" class="btn-close-drawer" title="Close Drawer (Key I)">✕</button>
+        </div>
+
+        <nav class="drawer-tabs">
+          <button class="drawer-tab active" data-tab="tab-rag">Wait-For / RAG</button>
+          <button class="drawer-tab" data-tab="tab-code">Controller Code</button>
+          <button class="drawer-tab" data-tab="tab-coffman">Coffman 4</button>
+          <button class="drawer-tab" data-tab="tab-metrics">Metrics</button>
+          <button class="drawer-tab" data-tab="tab-mapping">OS Rosetta</button>
+        </nav>
+
+        <div class="drawer-body">
+          <!-- TAB 1: RAG GRAPH -->
+          <div class="tab-pane active" id="tab-rag">
+            <div class="pane-action-bar">
+              <span class="pane-sub">GRAPH VISUALIZATION</span>
+              <button id="btn-toggle-rag-mode" class="sub-btn">Switch to Wait-For</button>
+            </div>
+            <div class="graph-canvas-box">
+              <canvas id="rag-canvas"></canvas>
+            </div>
+            <div id="cycle-display-box" class="cycle-box" style="display: none;">
+              <span class="cycle-icon">⚠️</span>
+              <span id="cycle-text">CYCLE DETECTED: [A → B → C → D → A]</span>
+            </div>
+            <div class="legend-note">
+              <b>Graph Semantics:</b>
+              <br>• Circles = Processes (Vehicles A, B, C, D)
+              <br>• Squares = Unit-Capacity Resources (Quadrants & Exit Slots)
+              <br>• Green Solid = Resource Allocation
+              <br>• Orange Dashed = Pending Request
+              <br>• Glowing Laser-Red = Deadlock Cycle
+            </div>
+          </div>
+
+          <!-- TAB 2: CONTROLLER CODE -->
+          <div class="tab-pane" id="tab-code">
+            <span class="pane-sub">SLIDE 9 PSEUDOCODE DEBUGGER</span>
+            <div class="code-box">
+              <div class="code-row" id="code-line-1"><span class="ln">1</span><span>if safe(movement, exit_space) then</span></div>
+              <div class="code-row" id="code-line-2"><span class="ln">2</span><span>  reserve();</span></div>
+              <div class="code-row" id="code-line-3"><span class="ln">3</span><span>  authorize();</span></div>
+              <div class="code-row" id="code-line-4"><span class="ln">4</span><span>  release_on_exit()</span></div>
+              <div class="code-row" id="code-line-5"><span class="ln">5</span><span>else</span></div>
+              <div class="code-row" id="code-line-6"><span class="ln">6</span><span>  queue();</span></div>
+              <div class="code-row" id="code-line-7"><span class="ln">7</span><span>  if stuck:</span></div>
+              <div class="code-row" id="code-line-8"><span class="ln">8</span><span>    stop_entry();</span></div>
+              <div class="code-row" id="code-line-9"><span class="ln">9</span><span>    clear()</span></div>
+            </div>
+            <div class="eval-banner" id="evaluating-tag">
+              evaluating: Idle
+            </div>
+            <div class="disclaimer-callout">
+              <strong>Honesty Rule (Slide 9):</strong> Banker's algorithm is a theoretical OS example, not a traffic-signal algorithm. <em>Coordination ≠ formal Banker's algorithm.</em>
+            </div>
+          </div>
+
+          <!-- TAB 3: COFFMAN 4 -->
+          <div class="tab-pane" id="tab-coffman">
+            <span class="pane-sub">FOUR COFFMAN CONDITIONS (SLIDE 4)</span>
+            <div class="coffman-mini-cards">
+              <div class="card-coffman">
+                <div class="card-coffman-head">
+                  <span class="num">01</span>
+                  <span class="title">Mutual Exclusion</span>
+                  <span class="tag-status" id="ind-mutual">HOLDING</span>
+                </div>
+                <p id="text-mutual">Unit quadrant capacity: at most one vehicle per conflict zone.</p>
+              </div>
+              <div class="card-coffman">
+                <div class="card-coffman-head">
+                  <span class="num">02</span>
+                  <span class="title">Hold & Wait</span>
+                  <span class="tag-status" id="ind-hold">HOLDING</span>
+                </div>
+                <p id="text-hold">Vehicles hold entry quadrant while waiting for next quadrant/exit.</p>
+              </div>
+              <div class="card-coffman">
+                <div class="card-coffman-head">
+                  <span class="num">03</span>
+                  <span class="title">No Preemption</span>
+                  <span class="tag-status" id="ind-preempt">HOLDING</span>
+                </div>
+                <p id="text-preempt">Vehicles inside the intersection cannot be forcibly displaced.</p>
+              </div>
+              <div class="card-coffman">
+                <div class="card-coffman-head">
+                  <span class="num">04</span>
+                  <span class="title">Circular Wait</span>
+                  <span class="tag-status" id="ind-circular">HOLDING</span>
+                </div>
+                <p id="text-circular">Closed cycle of requests: A waits for B, B for C, C for D, D for A.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: METRICS -->
+          <div class="tab-pane" id="tab-metrics">
+            <span class="pane-sub">LIVE TELEMETRY</span>
+            <div class="sparkline-container">
+              <canvas id="metrics-canvas"></canvas>
+            </div>
+            <div class="stat-pills-grid">
+              <div class="stat-pill">
+                <span class="val" id="val-throughput">0.0</span>
+                <span class="lbl">Throughput (v/m)</span>
+              </div>
+              <div class="stat-pill">
+                <span class="val" id="val-completed">0</span>
+                <span class="lbl">Completed</span>
+              </div>
+              <div class="stat-pill">
+                <span class="val" id="val-avg-wait">0.0s</span>
+                <span class="lbl">Avg Wait</span>
+              </div>
+              <div class="stat-pill">
+                <span class="val" id="val-max-wait">0.0s</span>
+                <span class="lbl">Max Wait</span>
+              </div>
+              <div class="stat-pill">
+                <span class="val" id="val-deadlocks">0</span>
+                <span class="lbl">Deadlocks</span>
+              </div>
+              <div class="stat-pill">
+                <span class="val" id="val-in-box">0</span>
+                <span class="lbl">In Box</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 5: OS ROSETTA -->
+          <div class="tab-pane" id="tab-mapping">
+            <span class="pane-sub">OS CONCEPTS ROSETTA STONE</span>
+            <table class="rosetta-table">
+              <thead>
+                <tr><th>Traffic System</th><th>OS Deadlock Concept</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Vehicle</td><td>Process / Thread</td></tr>
+                <tr><td>Quadrant / Exit Slot</td><td>Unit Resource</td></tr>
+                <tr><td>Crossing Stop Line</td><td>Resource Request</td></tr>
+                <tr><td>Occupying Quadrant</td><td>Resource Allocated</td></tr>
+                <tr><td>Yellow-Box Rule</td><td>Hold & Wait Prevention</td></tr>
+                <tr><td>Traffic Signal</td><td>Mutex / Scheduler</td></tr>
+                <tr><td>Police Clearing</td><td>Preemption & Victim Rollback</td></tr>
+                <tr><td>A→B→C→D→A</td><td>Wait-For Graph Cycle</td></tr>
+              </tbody>
+            </table>
+            <div class="disclaimer-callout" style="margin-top: 10px;">
+              <strong>Analogy Note:</strong> The traffic scene is an analogy for OS deadlock, not an identical physical implementation; the proposed controller is conceptual and its value is a clear, testable model.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- INTRO MODAL (SLIDE 1 REPLICA) -->
+    <div id="intro-modal" class="fullscreen-modal">
+      <div class="clean-modal-card">
+        <div class="modal-eyebrow">
+          OPERATING SYSTEMS · BACSE106 · MODULE 2: DEADLOCK MANAGEMENT · DA-2
+        </div>
+        <h1 class="modal-heading">
+          Analyzing and Resolving Physical Traffic Gridlocks at Urban Intersections
+        </h1>
+        <p class="modal-lead">
+          Interactive Projector-Ready Traffic Deadlock Simulator and Coffman Conditions Analysis
+        </p>
+
+        <div class="team-capsules-grid">
+          <div class="team-capsule">
+            <span class="name">B Priyadarshan</span>
+            <span class="reg">25BLC1180</span>
+          </div>
+          <div class="team-capsule">
+            <span class="name">U Sudharson</span>
+            <span class="reg">25BLC1053</span>
+          </div>
+          <div class="team-capsule">
+            <span class="name">E Sharukesh</span>
+            <span class="reg">25BLC1125</span>
+          </div>
+        </div>
+
+        <div class="modal-features">
+          <span>✨ <b>Left-Hand Traffic A→B→C→D→A Cycle</b></span>
+          <span>⚡ <b>"Break a Condition" Matrix</b></span>
+          <span>🛡️ <b>5-Step Recovery Machine</b></span>
+          <span>🚀 <b>Slide 9 Code Debugger</b></span>
+        </div>
+
+        <button id="btn-start-demo" class="btn-start-hero">
+          Launch Live Simulation (Space / Enter)
+        </button>
+      </div>
+    </div>
+
+    <!-- CONCLUSION MODAL (SLIDE 10 REPLICA) -->
+    <div id="conclusion-modal" class="fullscreen-modal hidden">
+      <div class="clean-modal-card wide">
+        <div class="modal-header-row">
+          <h2 class="modal-heading-sub">CONCLUSION: PREVENT · AVOID · RECOVER</h2>
+          <button id="btn-close-conclusion" class="btn-close-modal">✕</button>
+        </div>
+
+        <div class="conclusion-cards-row">
+          <div class="concl-card">
+            <div class="concl-badge ok">1. PREVENT</div>
+            <p>Break one of the 4 Coffman conditions upfront. The yellow-box rule enforces all-or-nothing allocation, breaking <strong>Hold and Wait</strong>.</p>
+          </div>
+          <div class="concl-card">
+            <div class="concl-badge coral">2. AVOID</div>
+            <p>Dynamically evaluate movements before entry. Safe-state reservation guarantees complete departure space before admission.</p>
+          </div>
+          <div class="concl-card">
+            <div class="concl-badge blue">3. RECOVER</div>
+            <p>Detect persistent cycles, bar entrance, deploy police preemption to rollback the lowest-cost victim vehicle, and restore normal flow.</p>
+          </div>
+        </div>
+
+        <div class="citation-strip">
+          <b>Key References (Slide 10):</b>
+          <br>1. E. G. Coffman, M. J. Elphick, and A. Shoshani, <em>"System Deadlocks,"</em> ACM Computing Surveys, 1971.
+          <br>2. Federal Highway Administration, <em>Traffic Signal Timing Manual</em>, FHWA-HOP-08-024.
+        </div>
+      </div>
+    </div>
+
+    <!-- KEYBOARD HELP MODAL -->
+    <div id="help-modal" class="fullscreen-modal hidden">
+      <div class="clean-modal-card">
+        <div class="modal-header-row">
+          <h2 class="modal-heading-sub">KEYBOARD SHORTCUTS</h2>
+          <button id="btn-close-help" class="btn-close-modal">✕</button>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="sc-item"><kbd>Space</kbd> <span>Play / Pause</span></div>
+          <div class="sc-item"><kbd>→</kbd> <span>Step 1 frame</span></div>
+          <div class="sc-item"><kbd>R</kbd> <span>Reset scenario</span></div>
+          <div class="sc-item"><kbd>1–8</kbd> <span>Load Scenarios</span></div>
+          <div class="sc-item"><kbd>I</kbd> <span>Toggle Inspector</span></div>
+          <div class="sc-item"><kbd>H</kbd> <span>Presenter mode</span></div>
+          <div class="sc-item"><kbd>F</kbd> <span>Fullscreen</span></div>
+          <div class="sc-item"><kbd>D</kbd> <span>Spawn 4 simultaneous</span></div>
+          <div class="sc-item"><kbd>B</kbd> <span>Toggle blockage</span></div>
+          <div class="sc-item"><kbd>Y</kbd> <span>Toggle Yellow-Box</span></div>
+          <div class="sc-item"><kbd>0</kbd> <span>Summary modal</span></div>
+          <div class="sc-item"><kbd>?</kbd> <span>Shortcuts modal</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARISON RESULTS MODAL -->
+    <div id="comp-results-modal" class="fullscreen-modal hidden">
+      <div class="clean-modal-card wide">
+        <div class="modal-header-row">
+          <h2 class="modal-heading-sub">SYNCHRONIZED BENCHMARK RESULTS</h2>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-download-comp-png" class="btn-action-primary">📸 Copy / Download PNG</button>
+            <button id="btn-close-comp-results" class="btn-close-modal">✕</button>
+          </div>
+        </div>
+        <div class="chart-canvas-box">
+          <canvas id="comp-chart-canvas" width="900" height="380"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING TOOLTIP -->
+    <div id="hover-tooltip" class="floating-tooltip"></div>
+  </div>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
